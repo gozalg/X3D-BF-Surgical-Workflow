@@ -1,0 +1,183 @@
+import argparse
+import os
+
+
+def str2bool(v):
+    return v.lower() in ("yes", "true", "t", "1")
+
+
+data_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    'data'
+)
+# The dataset-dependent defaults below follow --dataset (default: JIGSAWS).
+_pre_parser = argparse.ArgumentParser(add_help=False)
+_pre_parser.add_argument('--dataset', type=str, default='JIGSAWS')
+current_dataset = _pre_parser.parse_known_args()[0].dataset
+current_server  = 'DGX' # 'DGX' # 'WSL'
+
+
+parser = argparse.ArgumentParser(description="Train model for video-based surgical gestures recognition.")
+parser.register('type', 'bool', str2bool)
+# ----------------------
+# Experiment
+# ----------------------
+# Added - from here
+parser.add_argument('--wandb', type=str2bool, default=False,
+                    help="Whether to use wandb for logging.")
+parser.add_argument('--project_name', type=str, default=f"{current_dataset}_Feature_Extractor_{current_server}",
+                    help="Name of the project in wandb.")
+parser.add_argument('--test', type=str2bool, default=False,
+                    help="Whether the run is a test")
+parser.add_argument('--seed', type=int, default=1538574472, help="Random seed (default: the seed used in the paper).")
+# Added - till here
+parser.add_argument('--exp', type=str, default=f"{current_dataset}",
+                    help="Name (description) of the folder (parent folder) in which the experiment is run.")
+# ----------------------
+# Data
+# ----------------------
+# Added - from here
+parser.add_argument('--dataset', type=str, default=current_dataset, choices=['VTS', 'JIGSAWS', 'MultiBypass140', 'SAR_RARP50'],
+                    help="Name of the dataset to use.")
+parser.add_argument('--data_path', type=str, default=os.path.join(data_dir, current_dataset, "frames"),
+                        help="Path to data folder, which contains the extracted images for each video. "
+                             "One subfolder per video.")
+parser.add_argument('--transcriptions_dir', type=str, default=os.path.join(data_dir, current_dataset, "transcriptions"),
+                    help="Path to folder containing the transcription files (gestures\steps\phases annotations). One file per video.")
+# parser.add_argument('--video_lists_dir', type=str, default=os.path.join(data_dir, current_dataset, "Splits"),
+#                help="Path to directory containing information about each video in the form of video list files. "
+#                     "One subfolder per evaluation scheme, one file per evaluation fold.")
+# parser.add_argument('--epoch_size', type=int, default=2400,
+#                     help="number of samples in a epoch ")
+parser.add_argument('--number_of_samples_per_class', type=int, default=400,
+                    help="Number of samples taken from each class for training")
+# Added - till here
+#-------------------------------------------------------------
+#------------------------ VTS ------------------------
+if current_dataset=='VTS':
+    # Added - from here
+    parser.add_argument('--num_classes', type=int, default=6, 
+                        help="Number of classes.")
+    # Added - till here
+    parser.add_argument('--image_tmpl', default='img_{:05d}.jpg')
+    # parser.add_argument('--video_suffix', type=str,choices=['_side', '_top', # relevant for VTS
+    #                                                         '_capture1', '_capture2', # relevant for JIGSAWS
+    #                                                         ''], default='_side')
+    parser.add_argument('--task', type=str, choices=['gestures', 'steps', 'phases'], default='gestures',
+                        help =  "['steps', 'phases'] - MultiBypass140 task to evaluate.\n" +
+                                "'gestures' - VTS & JIGSAWS & SAR_RARP50 task to evaluate.")
+    parser.add_argument('--val_sampling_step', type=int, default=1,
+                    help="Describes how the validation video data has been downsampled from the original temporal "
+                         "resolution (by taking every <video_sampling_step>th frame).")
+#---------------------- JIGSAWS ----------------------
+elif current_dataset=='JIGSAWS':
+    # Added - from here
+    parser.add_argument('--num_classes', type=int, default=10, 
+                        help="Number of classes.")
+    # Added - till here
+    parser.add_argument('--image_tmpl', default='img_{:05d}.jpg')
+    # parser.add_argument('--video_suffix', type=str,choices=['_side', '_top', # relevant for VTS     
+    #                                                         '_capture1', '_capture2', # relevant for JIGSAWS
+    #                                                         ''], default='_capture2')
+    parser.add_argument('--task', type=str, choices=['gestures', 'steps', 'phases'], default='gestures',
+                        help =  "['steps', 'phases'] - MultiBypass140 task to evaluate.\n" +
+                                "'gestures' - VTS & JIGSAWS & SAR_RARP50 task to evaluate.")
+    parser.add_argument('--val_sampling_step', type=int, default=1,
+                    help="Describes how the validation video data has been downsampled from the original temporal "
+                         "resolution (by taking every <video_sampling_step>th frame).")
+#------------------- MultiBypass140 -------------------
+elif current_dataset=='MultiBypass140':
+    # Added - from here
+    parser.add_argument('--num_classes', type=int, default=46, 
+                        help="Number of classes.") # 12 for phases, 46 for steps
+    # Added - till here
+    parser.add_argument('--image_tmpl', default='{}_{:08d}.jpg') # 1st arg is dir name, 2nd arg is frame number
+    # parser.add_argument('--video_suffix', type=str,choices=['_side', '_top', # relevant for VTS     
+    #                                                         '_capture1', '_capture2', # relevant for JIGSAWS
+    #                                                         ''], default='')
+    parser.add_argument('--task', type=str, choices=['gestures', 'steps', 'phases'], default='steps',
+                        help =  "['steps', 'phases'] - MultiBypass140 task to evaluate.\n" +
+                                "'gestures' - VTS & JIGSAWS & SAR_RARP50 task to evaluate.")
+    parser.add_argument('--val_sampling_step', type=int, default=1,
+                    help="Describes how the validation video data has been downsampled from the original temporal "
+                         "resolution (by taking every <video_sampling_step>th frame).")
+#--------------------- SAR_RARP50 ---------------------
+elif current_dataset=='SAR_RARP50':
+    # raise NotImplementedError
+    # Added - from here
+    parser.add_argument('--num_classes', type=int, default=8, 
+                        help="Number of classes.")
+    # Added - till here
+    parser.add_argument('--image_tmpl', default='{:09d}.png')
+    # parser.add_argument('--video_suffix', type=str,choices=['_side', '_top', # relevant for VTS     
+    #                                                         '_capture1', '_capture2', # relevant for JIGSAWS
+    #                                                         ''], default='')
+    parser.add_argument('--task', type=str, choices=['gestures', 'steps', 'phases'], default='gestures',
+                        help =  "['steps', 'phases'] - MultiBypass140 task to evaluate.\n" +
+                                "'gestures' - VTS & JIGSAWS & SAR_RARP50 task to evaluate.")
+    parser.add_argument('--val_sampling_step', type=int, default=1,
+                    help="Describes how the validation video data has been downsampled from the original temporal "
+                         "resolution (by taking every <video_sampling_step>th frame).")
+else:
+    raise ValueError(f"Unknown dataset: {current_dataset}")
+#-------------------------------------------------------------
+parser.add_argument('--video_sampling_step', type=int, default=1, # 6
+                    help="Describes how the available video data has been downsampled from the original temporal "
+                         "resolution (by taking every <video_sampling_step>th frame).")
+# ----------------------
+# Augmentations
+# ----------------------
+
+parser.add_argument('--do_horizontal_flip', type='bool', default=True,
+                    help="Whether data augmentation should include a random horizontal flip.")
+parser.add_argument('--corner_cropping', type='bool', default=True,
+                    help="Whether data augmentation should include corner cropping.")
+# ----------------------
+# Model
+# ----------------------
+parser.add_argument('--arch', type=str, default="X3D", choices=["EfficientNetV2", "X3D"],
+                    help="Network architecture.")
+parser.add_argument('--arch_size', type=str, default="L", choices=["XS", "S", "M", "L"],
+                    help="Network architecture size as follows:\n\tX3D choices: [XS, S, M, L].\n\tEfficientnetV2 choices: [S, M, L].")
+parser.add_argument('--use_resnet_shortcut_type_B', type='bool', default=False,
+                    help="Whether to use shortcut connections of type B.") # TODO: remove
+parser.add_argument('--input_size', type=int, default=224, help="Target size (width/ height) of each frame.")
+# ----------------------
+# Training
+# ----------------------
+parser.add_argument('--split_num', type=int, default=None,
+                    help="split number to use as validation set. If None, apply cross validation")
+parser.add_argument('--eval_freq', '-ef', type=int, default=3, # 3
+                    help="Validate model every <eval_freq> epochs.")
+parser.add_argument('--epochs', type=int, default=100, # 100
+                    help="Number of epochs to train.")
+parser.add_argument('-b', '--batch_size', type=int, default=32, help="Batch size.")
+parser.add_argument('-j', '--workers', type=int, default=48, help="Number of threads used for data loading.")
+#  Adam optimizer
+parser.add_argument('--lr', type=float, default=0.00025, help="Learning rate.")
+parser.add_argument('--use_scheduler', type=str2bool, default=True, help="Whether to use the learning rate scheduler.")
+# ----------------------
+# Causal Configuration
+# ----------------------
+parser.add_argument('--clip_length_past', type=int, default=15, 
+                   help="With X3D only: Number of frames before the labeled frame in the 16-frame clip. Used to select which frame gets the label. Must sum with clip_length_future to 15.")
+parser.add_argument('--clip_length_future', type=int, default=0, 
+                   help="With X3D only: Number of frames after the labeled frame in the 16-frame clip. Used to select which frame gets the label. Must sum with clip_length_past to 15.")
+#  TBD
+# parser.add_argument('--loss_weighting', type=bool, default=True,
+#                     help="Whether to apply weights to loss calculation so that errors in more current predictions "
+#                          "weigh more heavily.")
+# ----------------------
+# Output
+# ----------------------
+parser.add_argument('--extract_features_only', type=str2bool, default=False,
+                    help="If set, only extract per-frame features (no training):\n\tNOTICE:\n\t1. Path to output folder must be set in --resume_exp\
+                        \n\t2. split_num will be extracted from the output folder name.")
+parser.add_argument('--resume_exp', type=str, default=None,
+                    help="Path to results of former experiment that shall be resumed. The format is as follows:\
+                        \ni.e. os.path.join(args.out, args.dataset, f\"{args.task}_epochs_{args.epochs}\", str(split))\
+                        \ne.g. ./output/JIGSAWS/gestures_epochs_1/0")
+parser.add_argument('--save_features', type=str2bool, default=True,
+                    help="Whether to save the extracted features.")
+parser.add_argument('--out', type=str, default=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output", "feature_extractor"),
+                    help="Path to output folder, where all models and results will be stored.")

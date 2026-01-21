@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.idea
+
+# weights
+extractor.pth
+*.pth
+
+# features
+*.npy
+
+# wandb
+wandb/
+
+# output    
+output/
+
+# Paper drafts (for anonymous submission)
+*.pdf
+
+# data - large files
+data/.vscode
+data/VTS/features
+data/VTS/frames
+data/VTS/original_videos
+data/JIGSAWS/Suturing
+data/JIGSAWS/frames
+data/JIGSAWS/features/EfficientNetV2-M
+data/JIGSAWS/features/X3D-L
+data/JIGSAWS/transcriptions/
+data/JIGSAWS/readme.txt
+data/JIGSAWS/meta_file_Suturing.txt
+data/SAR_RARP50/README.md
+data/SAR_RARP50/frames
+data/SAR_RARP50/features
+data/MultiBypass140/frames
+data/MultiBypass140/features
+
+# DGX
+*.log
+*.sqsh
+tasks/
+*task.sh
+slurm*
+*.out
+.vscode
+
+# WSL
+*.csv
+
+# Environment
+.env
+.venv/
+env/
+venv/
